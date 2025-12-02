@@ -1,0 +1,128 @@
+-- Модуль для тестування OpenDoorOnTouch
+-- Використовуємо TestService, щоб виводити повідомлення у Output
+local TestService = game:GetService("TestService")
+
+-- Функція для створення "фейкової" деталі (mockPart),
+-- щоб не використовувати справжні об'єкти з Workspace
+local function mockPart(position)
+	return {
+		Position = position,                  -- координати
+		CFrame = CFrame.new(position),        -- базовий CFrame
+		-- PivotTo: симуляція зміни положення об'єкта
+		PivotTo = function(self, cf)
+			self.CFrame = cf
+			self.Position = cf.Position
+		end,
+		-- FindFirstChild: повертає nil, бо це фейковий об'єкт
+		FindFirstChild = function(self, name)
+			return nil
+		end,
+		Parent = nil,
+	}
+end
+
+-- Функція для створення "фейкового" Humanoid
+-- Тут ми підставляємо HumanoidRootPart з позицією (5,0,0)
+local function mockHumanoid()
+	return {
+		Parent = {
+			FindFirstChild = function(self, name)
+				if name == "HumanoidRootPart" then
+					return {Position = Vector3.new(5,0,0)}
+				end
+				return nil
+			end,
+			PrimaryPart = nil,
+		}
+	}
+end
+
+-- Основна функція запуску тесту
+local function runTest()
+	-- Створюємо фейкові stuck і door
+	local stuck = mockPart(Vector3.new(0,0,0))
+	local door = mockPart(Vector3.new(2,0,0))
+
+	-- Прив'язуємо door до "батька", який має stuck
+	door.Parent = {
+		FindFirstChild = function(self, name)
+			if name == "stuck" then return stuck end
+		end,
+		Parent = nil
+	}
+
+	-- Локальні змінні для логіки дверей
+	local isOpen = false
+	local isAnimating = false
+	local openAngle = math.rad(90)   -- кут відкривання
+	local openTime = 0.01            -- час відкривання
+	local closeTime = 0.01           -- час закривання
+	local waitTime = 0.1             -- пауза між відкриттям/закриттям
+
+	-- Початкові дані для обчислення повороту
+	local pivotPos = stuck.Position
+	local initialOffset = door.Position - pivotPos
+
+	-- Функція для обчислення нового CFrame при повороті
+	local function getRotatedCFrame(angle)
+		return CFrame.new(pivotPos)
+			* CFrame.Angles(0, angle, 0)
+			* CFrame.new(initialOffset)
+	end
+
+	-- Функція для симуляції анімації (плавний рух)
+	local function tweenRotation(fromAngle, toAngle, duration)
+		local steps = 5
+		for i = 1, steps do
+			local alpha = i / steps
+			local angle = fromAngle + (toAngle - fromAngle) * alpha
+			local newCFrame = getRotatedCFrame(angle)
+			door:PivotTo(newCFrame)
+		end
+	end
+
+	-- Симуляція дотику гравця до дверей
+	local function simulateTouch()
+		-- Якщо двері вже відкриті або анімуються → нічого не робимо
+		if isOpen or isAnimating then return false end
+
+		-- Беремо фейковий Humanoid
+		local humanoid = mockHumanoid()
+		if not humanoid then return false end
+
+		local character = humanoid.Parent
+		local root = character:FindFirstChild("HumanoidRootPart") or character.PrimaryPart
+		if not root then return false end
+
+		-- Визначаємо, з якого боку стоїть гравець
+		local toPlayer = (root.Position - door.Position).Unit
+		local doorRight = door.CFrame.RightVector
+		local dot = doorRight:Dot(toPlayer)
+		local direction = dot > 0 and -1 or 1
+
+		-- Запускаємо анімацію відкривання/закривання
+		isAnimating = true
+		tweenRotation(0, openAngle * direction, openTime)
+		isOpen = true
+		tweenRotation(openAngle * direction, 0, closeTime)
+		isOpen = false
+		isAnimating = false
+
+		return true
+	end
+
+	-- Запускаємо тест
+	local result = simulateTouch()
+
+	-- Виводимо результати у Output
+	TestService:Message("OpenDoorOnTouchTest: simulateTouch result = " .. tostring(result))
+	TestService:Message("OpenDoorOnTouchTest: door.Position = " .. tostring(door.Position))
+	TestService:Message("OpenDoorOnTouchTest: isOpen = " .. tostring(isOpen))
+	TestService:Message("OpenDoorOnTouchTest: isAnimating = " .. tostring(isAnimating))
+end
+
+-- Викликаємо тест
+runTest()
+
+-- Повертаємо пустий модуль (щоб можна було require)
+return {}
