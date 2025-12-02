@@ -1,0 +1,66 @@
+local door = script.Parent                  -- Беремо сам об’єкт дверей (цей скрипт прикріплений до дверей)
+local stuck = door.Parent:FindFirstChild("stuck2") -- Шукаємо точку обертання (об’єкт "stuck2") у моделі дверей
+if not stuck then                           -- Якщо точки обертання немає
+	warn("Missing stuck2")                   -- Виводимо попередження у консоль
+	return                                  -- Зупиняємо виконання скрипта
+end
+
+local isOpen = false                        -- Змінна: чи двері відкриті
+local isAnimating = false                   -- Змінна: чи зараз йде анімація
+local openAngle = math.rad(90)              -- Кут відкривання дверей (90 градусів у радіанах)
+local openTime = 0.1                        -- Час відкривання дверей
+local closeTime = 0.1                       -- Час закривання дверей
+local waitTime = 0.1                        -- Час очікування перед закриттям
+
+local initialCFrame = door.CFrame           -- Початкове положення дверей
+local pivotCFrame = stuck.CFrame            -- Положення точки обертання
+local localOffset = pivotCFrame:ToObjectSpace(initialCFrame) -- Вираховуємо локальне зміщення дверей відносно точки обертання
+
+local function getRotatedCFrame(angle)      -- Функція: повертає новий CFrame дверей з певним кутом
+	return pivotCFrame * CFrame.Angles(0, angle, 0) * localOffset
+end
+
+local function tweenRotation(fromAngle, toAngle, duration) -- Функція: плавно анімує поворот дверей
+	local steps = 30                        -- Кількість кроків анімації
+	for i = 1, steps do                     -- Цикл по кроках
+		local alpha = i / steps             -- Прогрес анімації (від 0 до 1)
+		local angle = fromAngle + (toAngle - fromAngle) * alpha -- Поточний кут
+		door.CFrame = getRotatedCFrame(angle) -- Задаємо новий CFrame дверей
+		task.wait(duration / steps)         -- Чекаємо частку часу для плавності
+	end
+end
+
+local lastTouchTime = {}                    -- Таблиця: коли останній раз гравець торкався дверей
+
+door.Touched:Connect(function(hit)          -- Подія: коли двері торкається якийсь об’єкт
+	local humanoid = hit.Parent:FindFirstChild("Humanoid") -- Перевіряємо, чи це персонаж (Humanoid)
+	if not humanoid then return end          -- Якщо не персонаж — вихід
+
+	local character = humanoid.Parent        -- Беремо модель персонажа
+	local now = tick()                       -- Поточний час
+	if now - (lastTouchTime[character] or 0) < 1 then return end -- Якщо гравець торкався менше секунди тому — ігноруємо
+	lastTouchTime[character] = now           -- Оновлюємо час останнього дотику
+
+	if isOpen or isAnimating then return end -- Якщо двері вже відкриті або анімація йде — вихід
+
+	local root = character:FindFirstChild("HumanoidRootPart") or character.PrimaryPart -- Беремо центр персонажа
+	if not root then return end              -- Якщо немає — вихід
+
+	-- Вектор від точки обертання до гравця
+	local toPlayer = (root.Position - stuck.Position).Unit
+	-- Вектор від точки обертання до дверей
+	local doorVec = (door.Position - stuck.Position).Unit
+	-- Вектор нормалі до площини обертання (перпендикуляр)
+	local normal = doorVec:Cross(Vector3.new(0, 1, 0)).Unit
+	-- Визначаємо, з якого боку гравець стоїть
+	local side = normal:Dot(toPlayer)
+	local direction = side > 0 and 1 or -1   -- Якщо позитивне значення — відкривати в одну сторону, інакше в іншу
+
+	isAnimating = true                       -- Позначаємо, що анімація почалась
+	tweenRotation(0, openAngle * direction, openTime) -- Анімуємо відкривання дверей
+	isOpen = true                            -- Позначаємо, що двері відкриті
+	task.wait(waitTime)                      -- Чекаємо перед закриттям
+	tweenRotation(openAngle * direction, 0, closeTime) -- Анімуємо закривання дверей
+	isOpen = false                           -- Позначаємо, що двері закриті
+	isAnimating = false                      -- Анімація завершена
+end)
