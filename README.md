@@ -26,3 +26,6 @@ https://github.com/MrVurchik/MoonGame-Team/blob/main/%D0%9A%D0%BE%D0%B4%20%D0%B4
 4. Відкрити **View,потім Output**, щоб побачити результати:
 ## Посилання на код(код який тестує код):
 https://github.com/MrVurchik/MoonGame-Team/blob/main/%D0%9C%D0%BE%D0%B4%D1%83%D0%BB%D1%8C%20%D0%B4%D0%BB%D1%8F%20%D1%82%D0%B5%D1%81%D1%82%D1%83%D0%B2%D0%B0%D0%BD%D0%BD%D1%8F%20OpenDoorOnTouch 
+## Посилання на табличку:
+https://github.com/users/MrVurchik/projects/1/views/2
+## Як користуватися продуктом(силка):
