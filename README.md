@@ -36,7 +36,8 @@ https://github.com/users/MrVurchik/projects/1/views/2
 4. Переконатися, що всі ресурси (скрипти, аудіо, UI) підключені.
 ## Як користуватися продуктом(силка):
 https://github.com/MrVurchik/MoonGame-Team/blob/main/%D0%AF%D0%BA%20%D1%80%D0%BE%D1%80%D0%B8%D1%81%D1%82%D1%83%D0%B2%D0%B0%D1%82%D0%B8%D1%81%D1%8F
-
+## Посилання на Frame:
+https://www.figma.com/design/6viX5HeukZoFdQ7xOwYNzH/Untitled?node-id=3-6&p=f&t=GdnIo29ZuJofxoPK-0
 
 
 
